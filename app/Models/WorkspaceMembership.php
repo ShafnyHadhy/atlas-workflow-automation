@@ -3,11 +3,20 @@
 namespace App\Models;
 
 use App\Enums\WorkspaceRole;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WorkspaceMembership extends Model
 {
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'workspace_id',
+        'role',
+    ];
+
     protected function casts(): array
     {
         return [
