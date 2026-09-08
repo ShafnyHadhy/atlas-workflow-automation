@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
+import { WorkspaceSwitcher } from './workspace-switcher';
 
 const mainNavItems: NavItem[] = [
     {
@@ -50,6 +51,8 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
+
+                <WorkspaceSwitcher />
             </SidebarHeader>
 
             <SidebarContent>
