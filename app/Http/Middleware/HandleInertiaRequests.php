@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Workspace;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -42,6 +44,47 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+
+            'currentWorkspace' => $this->resolveCurrentWorkspace($request),
+
+            'availableWorkspaces' => $this->resolveAvailableWorkspaces($request),
         ];
+    }
+
+    private function resolveCurrentWorkspace(Request $request): ?Workspace
+    {
+        $workspace = $request->route('workspace');
+
+        if ($workspace instanceof Workspace) {
+            return $workspace;
+        }
+
+        $activeWorkspaceId = $request->session()->get('active_workspace_id');
+
+        if ($activeWorkspaceId === null || ! $request->user()) {
+            return null;
+        }
+
+        $workspace = $request->user()
+            ->workspaces()
+            ->where('workspaces.id', $activeWorkspaceId)
+            ->first();
+
+        if ($workspace === null) {
+            $request->session()->forget('active_workspace_id');
+        }
+
+        return $workspace;
+    }
+
+    private function resolveAvailableWorkspaces(Request $request): Collection
+    {
+        if (! $request->user()) {
+            return collect();
+        }
+
+        return $request->user()
+            ->workspaces()
+            ->get();
     }
 }
