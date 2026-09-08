@@ -1,5 +1,5 @@
-import { Workspace } from "@/types/workspace";
 import { Head, router } from "@inertiajs/react";
+import type { Workspace } from "@/types/workspace";
 
 type Props = {
     workspaces: Workspace[];
