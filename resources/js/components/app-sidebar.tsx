@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -39,8 +39,6 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { currentWorkspace } = usePage().props;
-
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
