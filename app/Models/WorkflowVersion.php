@@ -38,4 +38,9 @@ class WorkflowVersion extends Model
     {
         return $this->hasMany(WorkflowNode::class);
     }
+
+    public function edges(): HasMany
+    {
+        return $this->hasMany(WorkflowEdge::class);
+    }
 }
