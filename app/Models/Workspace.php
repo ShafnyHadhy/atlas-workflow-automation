@@ -16,6 +16,11 @@ class Workspace extends Model
         'slug',
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     public function memberships(): HasMany
     {
         return $this->hasMany(WorkspaceMembership::class);
@@ -28,8 +33,8 @@ class Workspace extends Model
             ->withTimestamps();
     }
 
-    public function getRouteKeyName(): string
+    public function workflows(): HasMany
     {
-        return 'slug';
+        return $this->hasMany(Workflow::class);
     }
 }
