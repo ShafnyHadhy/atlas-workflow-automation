@@ -24,8 +24,8 @@ class Workflow extends Model
         return $this->belongsTo(Workspace::class);
     }
 
-    // public function versions(): HasMany
-    // {
-    //     return $this->hasMany(WorkflowVersion::class);
-    // }
+    public function versions(): HasMany
+    {
+        return $this->hasMany(WorkflowVersion::class);
+    }
 }
