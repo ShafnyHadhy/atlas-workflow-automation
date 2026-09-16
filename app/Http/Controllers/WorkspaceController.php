@@ -52,8 +52,14 @@ class WorkspaceController extends Controller
 
     public function show(Workspace $workspace): Response
     {
+        $workflows = $workspace->workflows()
+            ->with('draftVersion')
+            ->latest()
+            ->get();
+
         return Inertia::render('workspaces/show', [
             'workspace' => $workspace,
+            'workflows' => $workflows,
         ]);
     }
 
