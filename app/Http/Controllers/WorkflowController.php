@@ -26,8 +26,11 @@ class WorkflowController extends Controller
         );
 
         return redirect()->route(
-            'workspaces.show',
-            [ 'workspace' => $workspace, ]
+            'workspaces.workflows.show',
+            [
+                'workspace' => $workspace,
+                'workflow' => $workflow,
+            ]
         );
     }
 
