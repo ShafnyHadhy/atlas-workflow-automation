@@ -3,6 +3,7 @@
 namespace Tests\Feature\Workflows;
 
 use App\Models\User;
+use App\Models\Workflow;
 use App\Models\Workspace;
 use App\Models\WorkspaceMembership;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -107,5 +108,42 @@ class StoreWorkflowTest extends TestCase
             'workspace_id' => $workspace->id,
             'name' => 'Guest Workflow',
         ]);
+    }
+
+    public function test_member_is_redirected_to_created_workflow(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $workspace = Workspace::factory()->create();
+
+        WorkspaceMembership::factory()->create([
+            'user_id' => $user->id,
+            'workspace_id' => $workspace->id,
+            'role' => 'member',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->post(
+                "/workspaces/{$workspace->slug}/workflows",
+                [
+                    'name' => 'Invoice Processing',
+                    'description' => 'Process incoming invoices',
+                ]
+            );
+
+        $workflow = Workflow::query()
+            ->where('workspace_id', $workspace->id)
+            ->where('name', 'Invoice Processing')
+            ->firstOrFail();
+
+        $response->assertRedirect(
+            route('workspaces.workflows.show', [
+                'workspace' => $workspace,
+                'workflow' => $workflow,
+            ])
+        );
     }
 }
