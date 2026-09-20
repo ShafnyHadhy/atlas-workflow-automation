@@ -27,12 +27,23 @@ export default function Show({ workspace, workflows }: Props) {
                         Workflows
                     </h2>
 
-                    <button
-                        type="button"
-                        onClick={() => setIsCreating(true)}
-                    >
-                        Create Workflow
-                    </button>
+                    { !isCreating ?
+                        <button
+                            type="button"
+                            onClick={() => setIsCreating(true)}
+                        >
+                            Create Workflow
+                        </button>
+                    :
+                        <button
+                            type="button"
+                            className="text-red-600"
+                            onClick={() => setIsCreating(false)}
+                        >
+                            Close
+                        </button>
+                    }
+
                 </div>
 
                 { isCreating && (
