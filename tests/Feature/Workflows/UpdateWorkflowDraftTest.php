@@ -209,4 +209,304 @@ class UpdateWorkflowDraftTest extends TestCase
         $this->assertDatabaseCount('workflow_nodes', 2);
         $this->assertDatabaseCount('workflow_edges', 1);
     }
+
+    public function test_valid_draft_graph_can_be_updated_through_http(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $workspace = Workspace::factory()->create();
+
+        WorkspaceMembership::factory()->create([
+            'user_id' => $user->id,
+            'workspace_id' => $workspace->id,
+            'role' => 'member',
+        ]);
+
+        $workflow = Workflow::factory()->create([
+            'workspace_id' => $workspace->id,
+        ]);
+
+        $version = WorkflowVersion::factory()->create([
+            'workflow_id' => $workflow->id,
+            'version_number' => 1,
+            'status' => 'draft',
+        ]);
+
+        $triggerNodeKey = (string) Str::uuid();
+        $actionNodeKey = (string) Str::uuid();
+        $endNodeKey = (string) Str::uuid();
+
+        WorkflowNode::factory()->create([
+            'workflow_version_id' => $version->id,
+            'node_key' => $triggerNodeKey,
+            'type' => 'trigger',
+            'configuration' => [],
+            'position' => [
+                'x' => 100,
+                'y' => 100,
+            ],
+        ]);
+
+        WorkflowNode::factory()->create([
+            'workflow_version_id' => $version->id,
+            'node_key' => $actionNodeKey,
+            'type' => 'action',
+            'configuration' => [],
+            'position' => [
+                'x' => 100,
+                'y' => 250,
+            ],
+        ]);
+
+        WorkflowNode::factory()->create([
+            'workflow_version_id' => $version->id,
+            'node_key' => $endNodeKey,
+            'type' => 'end',
+            'configuration' => [],
+            'position' => [
+                'x' => 100,
+                'y' => 400,
+            ],
+        ]);
+
+        $newTriggerNodeKey = (string) Str::uuid();
+        $newActionNodeKey = (string) Str::uuid();
+
+        $response = $this
+            ->actingAs($user)
+            ->put(
+                "/workspaces/{$workspace->slug}/workflows/{$workflow->slug}/versions/{$version->id}",
+                [
+                    'nodes' => [
+                        [
+                            'node_key' => $newTriggerNodeKey,
+                            'type' => 'trigger',
+                            'configuration' => [],
+                            'position' => [
+                                'x' => 200,
+                                'y' => 100,
+                            ],
+                        ],
+                        [
+                            'node_key' => $newActionNodeKey,
+                            'type' => 'action',
+                            'configuration' => [
+                                'action' => 'send_email',
+                            ],
+                            'position' => [
+                                'x' => 200,
+                                'y' => 250,
+                            ],
+                        ],
+                    ],
+                    'edges' => [
+                        [
+                            'source_node_key' => $newTriggerNodeKey,
+                            'target_node_key' => $newActionNodeKey,
+                            'condition' => null,
+                        ],
+                    ],
+                ]
+            );
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseCount('workflow_nodes', 2);
+        $this->assertDatabaseCount('workflow_edges', 1);
+
+        $this->assertDatabaseHas('workflow_nodes', [
+            'workflow_version_id' => $version->id,
+            'node_key' => $newTriggerNodeKey,
+            'type' => 'trigger',
+        ]);
+
+        $this->assertDatabaseHas('workflow_nodes', [
+            'workflow_version_id' => $version->id,
+            'node_key' => $newActionNodeKey,
+            'type' => 'action',
+        ]);
+
+        $this->assertDatabaseHas('workflow_edges', [
+            'workflow_version_id' => $version->id,
+            'source_node_key' => $newTriggerNodeKey,
+            'target_node_key' => $newActionNodeKey,
+        ]);
+    }
+
+    public function test_workflow_version_from_another_workspace_cannot_be_updated_through_a_different_workspace_url(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $workspaceA = Workspace::factory()->create();
+        $workspaceB = Workspace::factory()->create();
+
+        WorkspaceMembership::factory()->create([
+            'user_id' => $user->id,
+            'workspace_id' => $workspaceA->id,
+            'role' => 'member',
+        ]);
+
+        $workflow = Workflow::factory()->create([
+            'workspace_id' => $workspaceB->id,
+        ]);
+
+        $version = WorkflowVersion::factory()->create([
+            'workflow_id' => $workflow->id,
+            'version_number' => 1,
+            'status' => WorkflowVersionStatus::Draft,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->put(
+                "/workspaces/{$workspaceA->slug}/workflows/{$workflow->slug}/versions/{$version->id}",
+                [
+                    'nodes' => [
+                        [
+                            'node_key' => (string) Str::uuid(),
+                            'type' => WorkflowNodeType::Trigger,
+                            'configuration' => [],
+                            'position' => [
+                                'x' => 100,
+                                'y' => 100,
+                            ],
+                        ],
+                    ],
+                    'edges' => [],
+                ]
+            );
+
+        $response->assertNotFound();
+    }
+
+    public function test_non_member_cannot_update_a_workflow_draft(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $workspace = Workspace::factory()->create();
+
+        $workflow = Workflow::factory()->create([
+            'workspace_id' => $workspace->id,
+        ]);
+
+        $version = WorkflowVersion::factory()->create([
+            'workflow_id' => $workflow->id,
+            'version_number' => 1,
+            'status' => WorkflowVersionStatus::Draft,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->put(
+                "/workspaces/{$workspace->slug}/workflows/{$workflow->slug}/versions/{$version->id}",
+                [
+                    'nodes' => [
+                        [
+                            'node_key' => (string) Str::uuid(),
+                            'type' => WorkflowNodeType::Trigger,
+                            'configuration' => [],
+                            'position' => [
+                                'x' => 100,
+                                'y' => 100,
+                            ],
+                        ],
+                    ],
+                    'edges' => [],
+                ]
+            );
+
+        $response->assertForbidden();
+    }
+
+    public function test_guest_cannot_update_a_workflow_draft(): void
+    {
+        $workspace = Workspace::factory()->create();
+
+        $workflow = Workflow::factory()->create([
+            'workspace_id' => $workspace->id,
+        ]);
+
+        $version = WorkflowVersion::factory()->create([
+            'workflow_id' => $workflow->id,
+            'version_number' => 1,
+            'status' => WorkflowVersionStatus::Draft,
+        ]);
+
+        $response = $this->put(
+            "/workspaces/{$workspace->slug}/workflows/{$workflow->slug}/versions/{$version->id}",
+            [
+                'nodes' => [
+                    [
+                        'node_key' => (string) Str::uuid(),
+                        'type' => WorkflowNodeType::Trigger,
+                        'configuration' => [],
+                        'position' => [
+                            'x' => 100,
+                            'y' => 100,
+                        ],
+                    ],
+                ],
+                'edges' => [],
+            ]
+        );
+
+        $response->assertRedirect('/login');
+    }
+
+    public function test_version_from_another_workflow_cannot_be_updated_through_a_different_workflow_url(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+        $workspace = Workspace::factory()->create();
+
+        WorkspaceMembership::factory()->create([
+            'user_id' => $user->id,
+            'workspace_id' => $workspace->id,
+            'role' => 'member',
+        ]);
+
+        $workflowA = Workflow::factory()->create([
+            'workspace_id' => $workspace->id,
+        ]);
+
+        $workflowB = Workflow::factory()->create([
+            'workspace_id' => $workspace->id,
+        ]);
+
+        $versionB = WorkflowVersion::factory()->create([
+            'workflow_id' => $workflowB->id,
+            'version_number' => 1,
+            'status' => WorkflowVersionStatus::Draft,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->put(
+                "/workspaces/{$workspace->slug}/workflows/{$workflowA->slug}/versions/{$versionB->id}",
+                [
+                    'nodes' => [
+                        [
+                            'node_key' => (string) Str::uuid(),
+                            'type' => WorkflowNodeType::Trigger,
+                            'configuration' => [],
+                            'position' => [
+                                'x' => 100,
+                                'y' => 100,
+                            ],
+                        ],
+                    ],
+                    'edges' => [],
+                ]
+            );
+
+        $response->assertNotFound();
+    }
 }
