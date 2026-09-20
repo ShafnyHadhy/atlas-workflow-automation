@@ -29,6 +29,10 @@ Route::middleware(['auth', 'verified', 'workspace.access'])->group(function () {
     Route::get('/workspaces/{workspace}/workflows/{workflow:slug}', [WorkflowController::class, 'show'])
         ->scopeBindings()
         ->name('workspaces.workflows.show');
+
+    Route::put('/workspaces/{workspace}/workflows/{workflow:slug}/versions/{version}', [WorkflowController::class, 'update'])
+        ->scopeBindings()
+        ->name('workspaces.workflows.versions.update');
 });
 
 require __DIR__.'/settings.php';
