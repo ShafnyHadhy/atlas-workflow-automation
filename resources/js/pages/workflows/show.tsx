@@ -1,4 +1,16 @@
-import { Head } from "@inertiajs/react";
+import { Head } from '@inertiajs/react';
+import {
+    Background,
+    Controls,
+    ReactFlow,
+    type Edge,
+    type Node,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+
+import TriggerNode from '@/components/workflow/trigger-node';
+import ActionNode from '@/components/workflow/action-node';
+import EndNode from '@/components/workflow/end-node';
 
 type WorkflowNode = {
     id: number;
@@ -19,12 +31,12 @@ type WorkflowEdge = {
 };
 
 type DraftVersion = {
-    id: number,
+    id: number;
     version_number: number;
     status: 'draft' | 'published' | 'archived';
     nodes: WorkflowNode[];
     edges: WorkflowEdge[];
-}
+};
 
 type Workflow = {
     id: number;
@@ -36,17 +48,42 @@ type Workflow = {
 
 type Props = {
     workspace: {
-        id: number,
-        name: string,
-        slug: string,
+        id: number;
+        name: string;
+        slug: string;
     };
     workflow: Workflow;
 };
 
+const nodeTypes = {
+    trigger: TriggerNode,
+    action: ActionNode,
+    end: EndNode,
+};
+
 export default function Show({ workflow }: Props) {
-    return(
+    const draftVersion = workflow.draft_version;
+
+    const nodes: Node[] =
+        draftVersion?.nodes.map((node) => ({
+            id: node.node_key,
+            type: node.type,
+            position: node.position,
+            data: {
+                label: getNodeLabel(node),
+            },
+        })) ?? [];
+
+    const edges: Edge[] =
+        draftVersion?.edges.map((edge) => ({
+            id: String(edge.id),
+            source: edge.source_node_key,
+            target: edge.target_node_key,
+        })) ?? [];
+
+    return (
         <>
-            <Head title={workflow.name}/>
+            <Head title={workflow.name} />
 
             <div className="flex flex-1 flex-col gap-6 p-6">
                 <div>
@@ -65,46 +102,64 @@ export default function Show({ workflow }: Props) {
                     </p>
                 </div>
 
-                <div className="rounded-xl border p-4">
-                    <h2 className="text-lg font-medium">
-                        Workflow version
-                    </h2>
+                {draftVersion ? (
+                    <div className="rounded-xl border p-4">
+                        <h2 className="text-lg font-medium">
+                            Workflow version
+                        </h2>
 
-                     {workflow.draft_version ? (
                         <div className="mt-3 space-y-2">
                             <p>
                                 Version:{' '}
-                                {workflow.draft_version.version_number}
+                                {draftVersion.version_number}
                             </p>
 
                             <p>
                                 Status:{' '}
-                                {workflow.draft_version.status}
+                                {draftVersion.status}
                             </p>
 
                             <p>
                                 Nodes:{' '}
-                                {workflow.draft_version.nodes.length}
+                                {draftVersion.nodes.length}
                             </p>
 
                             <p>
                                 Edges:{' '}
-                                {workflow.draft_version.edges.length}
+                                {draftVersion.edges.length}
                             </p>
                         </div>
-                    ) : (
-                        <p className="mt-3 text-muted-foreground">
+                    </div>
+                ) : (
+                    <div className="rounded-xl border p-4">
+                        <p className="text-muted-foreground">
                             This workflow does not have a draft version.
                         </p>
-                    )}
-                </div>
+                    </div>
+                )}
 
-                <div className="flex min-h-100 items-center justify-center rounded-xl border border-dashed">
-                    <p className="text-muted-foreground">
-                        Workflow canvas will appear here.
-                    </p>
+                <div className="h-150 overflow-hidden rounded-xl border">
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        nodeTypes={nodeTypes}
+                        fitView
+                        nodesDraggable={false}
+                        nodesConnectable={false}
+                    >
+                        <Background />
+                        <Controls />
+                    </ReactFlow>
                 </div>
             </div>
         </>
     );
+}
+
+function getNodeLabel(node: WorkflowNode): string {
+    if (typeof node.configuration.label === 'string') {
+        return node.configuration.label;
+    }
+
+    return node.type.charAt(0).toUpperCase() + node.type.slice(1);
 }
