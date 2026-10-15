@@ -22,7 +22,7 @@ class UpdateWorkflowDraftRequest extends FormRequest
             'nodes.*.position.x' => ['required', 'numeric'],
             'nodes.*.position.y' => ['required', 'numeric'],
 
-            'edges' => ['required', 'array'],
+            'edges' => ['present', 'array'],
             'edges.*.source_node_key' => ['required', 'uuid'],
             'edges.*.target_node_key' => ['required', 'uuid'],
             'edges.*.condition' => ['nullable', 'array'],
