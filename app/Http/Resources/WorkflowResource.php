@@ -42,6 +42,18 @@ class WorkflowResource extends JsonResource
                     ])->values(),
                 ];
             }),
+
+            'versions' => $this->whenLoaded('versions', function () {
+                return $this->versions
+                    ->sortByDesc('version_number')
+                    ->map(fn ($version) => [
+                        'id' => $version->id,
+                        'version_number' => $version->version_number,
+                        'status' => $version->status->value,
+                        'published_at' => $version->published_at?->toISOString(),
+                    ])
+                    ->values();
+            }),
         ];
     }
 }
