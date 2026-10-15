@@ -33,6 +33,18 @@ Route::middleware(['auth', 'verified', 'workspace.access'])->group(function () {
     Route::put('/workspaces/{workspace}/workflows/{workflow:slug}/versions/{version}', [WorkflowController::class, 'update'])
         ->scopeBindings()
         ->name('workspaces.workflows.versions.update');
+
+    Route::post('/workspaces/{workspace}/workflows/{workflow:slug}/drafts', [WorkflowController::class, 'createDraft'])
+        ->scopeBindings()
+        ->name('workspaces.workflows.drafts.store');
+
+    Route::post('/workspaces/{workspace}/workflows/{workflow:slug}/versions/{version}/publish', [WorkflowController::class, 'publish'])
+        ->scopeBindings()
+        ->name('workspaces.workflows.versions.publish');
+
+    Route::get('/workspaces/{workspace}/workflows/{workflow:slug}/versions/{version}', [WorkflowController::class, 'showVersion'])
+        ->scopeBindings()
+        ->name('workspaces.workflows.versions.show');
 });
 
 require __DIR__.'/settings.php';
