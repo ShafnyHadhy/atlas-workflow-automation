@@ -1,8 +1,11 @@
 import { Head } from '@inertiajs/react';
+import { useCallback, useState } from 'react';
 import {
+    addEdge,
     Background,
     Controls,
     ReactFlow,
+    type Connection,
     type Edge,
     type Node,
 } from '@xyflow/react';
@@ -64,7 +67,7 @@ const nodeTypes = {
 export default function Show({ workflow }: Props) {
     const draftVersion = workflow.draft_version;
 
-    const nodes: Node[] =
+    const [nodes, setNodes] = useState<Node[]>(() =>
         draftVersion?.nodes.map((node) => ({
             id: node.node_key,
             type: node.type,
@@ -72,14 +75,44 @@ export default function Show({ workflow }: Props) {
             data: {
                 label: getNodeLabel(node),
             },
-        })) ?? [];
+        })) ?? [],
+    );
 
-    const edges: Edge[] =
+    const [edges, setEdges] = useState<Edge[]>(() =>
         draftVersion?.edges.map((edge) => ({
             id: String(edge.id),
             source: edge.source_node_key,
             target: edge.target_node_key,
-        })) ?? [];
+        })) ?? [],
+    );
+
+    const onNodesChange = useCallback(
+        (changes: Parameters<NonNullable<React.ComponentProps<typeof ReactFlow>['onNodesChange']>>[0]) => {
+            setNodes((currentNodes) => {
+                let updatedNodes = [...currentNodes];
+
+                for (const change of changes) {
+                    if (change.type === 'position' && change.position) {
+                        updatedNodes = updatedNodes.map((node) =>
+                            node.id === change.id
+                                ? {
+                                    ...node,
+                                    position: change.position!,
+                                }
+                                : node,
+                        );
+                    }
+                }
+
+                return updatedNodes;
+            });
+        },
+        [],
+    );
+
+    const onConnect = useCallback((connection: Connection) => {
+        setEdges((currentEdges) => addEdge(connection, currentEdges));
+    }, []);
 
     return (
         <>
@@ -143,9 +176,9 @@ export default function Show({ workflow }: Props) {
                         nodes={nodes}
                         edges={edges}
                         nodeTypes={nodeTypes}
+                        onNodesChange={onNodesChange}
+                        onConnect={onConnect}
                         fitView
-                        nodesDraggable={false}
-                        nodesConnectable={false}
                     >
                         <Background />
                         <Controls />
