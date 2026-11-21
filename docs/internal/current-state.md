@@ -142,6 +142,9 @@ Atlas is not yet ready to implement the workflow execution engine. Implementing 
 
 ## 7. Phased Implementation Roadmap (Approved Direction)
 
+> [!NOTE]
+> This section outlines the preliminary roadmap sketched during Phase P0. The finalized, authoritative engineering roadmap is established in [`docs/internal/implementation-roadmap.md`](file:///d:/A-Projects/atlas/docs/internal/implementation-roadmap.md), which defines the full milestone sequence M0–M7 (scoping M0 strictly to foundation and quality gate stabilization, and scheduling `WorkflowPolicy`, draft concurrency locking, and version immutability to Milestone M1).
+
 Execution development will proceed strictly in phased milestones. Initial execution will support **only linear workflows**:
 
 $$\text{Trigger} \longrightarrow \text{zero or more Actions} \longrightarrow \text{End}$$
